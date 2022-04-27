@@ -1,3 +1,14 @@
+# Training data and pickle dump files
+*.p
+*.mp3
+
+# Testing inputs and outputs
+dat/notation_output/*
+dat/testing/*
+
+# Compiled models
+classifier/drum_classifier_model/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
