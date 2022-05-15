@@ -4,13 +4,13 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Removes warning messages from tensorf
 import tensorflow as tf
 
 from audio import audio
-from audio import bpm
+from audio import bpm_functions
 from notation import notation
 from classifier import query_model
 
 from audio import EXTENSIONS
 PATH_INPUT = 'dat/testing/'
-PATH_OUTPUT = 'notation/'
+PATH_OUTPUT = 'dat/notation_output/'
 
 def get_boolean_input(prompt_string):
     return input(prompt_string).strip().lower() in ['yes', 'y', 'true', 't']
@@ -20,15 +20,15 @@ for file in os.listdir(PATH_INPUT):
     if file.split('.')[-1] in EXTENSIONS:
     
         print('---', file, '---')
-        visualise = get_boolean_input('Enable sentitivity tuning for note detection? (Y/N)')
+        visualise = get_boolean_input('Enable volume sentitivity tuning for note detection? (Y/N)')
     
         # Get images, peaks and bpm from file
         print('Reading file...')
         data_images, peaks, bpm = audio.audio_to_images_notation(PATH_INPUT+file, visualise=visualise)
         
-        # Get output
+        # Get instruments
         print('Classifying drums...')
-        output = query_model.get_instruments(data_images)
+        instrument_indexs = query_model.get_instruments(data_images)
 
         # Get custom options
         try:
@@ -41,8 +41,11 @@ for file in os.listdir(PATH_INPUT):
         triplets = get_boolean_input('Use triplets? (Y/N)')
         repeats = get_boolean_input('Use bar repeats in notation? (Y/N)')
 
+        # Get durations
+        durations = query_model.get_durations(peaks, bpm_functions.convert_spb_bpm(bpm))
+
         # Initialise score
-        score = notation.Score(instruments, durations, convert_spb_bpm(bpm), triplets, dynamic_bpm, repeats)
+        score = notation.Score(instrument_indexs, durations, triplets, dynamic_bpm, repeats)
         
         # Convert score to notation and save file
         score.create_score(PATH_OUTPUT + file.split('.')[0])

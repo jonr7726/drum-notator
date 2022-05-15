@@ -302,13 +302,13 @@ class Voice():
 
 class Score:
 
-    def __init__(self, instruments, durations, triplets_enabled, dynamic_bpm, use_repeats):
-        if repeats:
+    def __init__(self, instrument_indexs, durations, triplets_enabled, dynamic_bpm, use_repeats):
+        if use_repeats:
             self.max_repeats = MAX_REPEATS
         else:
             self.max_repeats = 0
 
-        notes = get_notes(instruments, durations, triplets_enabled, dynamic_bpm)
+        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled, dynamic_bpm)
 
         self.up = Voice(rest=REST)
         self.down = Voice(rest=INVISIBLE_REST)
@@ -451,11 +451,11 @@ class Score:
                                 # Cant repeat half of 2 bars
                                 repeat -= 0.5
                                 up_voice += lilypond_notation.make_bar(last_up_bars[0])
-                                down_voice += lilypond_notation.make_bar(last_down_bar[0])
+                                down_voice += lilypond_notation.make_bar(last_down_bars[0])
 
                         # Add repeat bars
-                        up_voice += lilypond_notation.make_repeat_bars(last_up_bars[:repeating_bars], repeat)
-                        down_voice += lilypond_notation.make_repeat_bars(last_down_bars[:repeating_bars], repeat)
+                        up_voice += lilypond_notation.make_repeat_bars(last_up_bars[:repeating_bars], int(repeat))
+                        down_voice += lilypond_notation.make_repeat_bars(last_down_bars[:repeating_bars], int(repeat))
 
                         # Reset repeat variables
                         repeat = 0

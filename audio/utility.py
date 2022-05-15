@@ -31,7 +31,10 @@ def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, 
     
     # Smooth amplitudes with convolution filter (removes noise by essentially averaging points over smooth_distance)
     filter = tf.ones(smooth_distance)/smooth_distance # Set filter to average over smooth distance
-    absolute_amplitudes = tf.squeeze(tf.nn.convolution(tf.constant(absolute_amplitudes, shape=(1, len(absolute_amplitudes), 1)), tf.constant(filter, shape=(smooth_distance,1,1)), padding='SAME')).numpy()
+    absolute_amplitudes = tf.squeeze(tf.nn.convolution(
+        tf.constant(absolute_amplitudes, shape=(1, len(absolute_amplitudes), 1)),
+        tf.constant(filter, shape=(smooth_distance,1,1)),
+        padding='SAME')).numpy()
     absolute_amplitudes = absolute_amplitudes / max(absolute_amplitudes) # Normalise again
     
     peaks, _ = find_peaks(absolute_amplitudes, distance=min_distance, prominence=min_prominence)
@@ -40,7 +43,7 @@ def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, 
     if visualise:
         plt.plot(absolute_amplitudes)
         plt.plot(peaks, absolute_amplitudes[peaks], 'x')
-        plt.title(file_name)
+        plt.title(file_name.split('/')[-1])
         plt.show()
         
         print(file_name)

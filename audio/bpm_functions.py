@@ -16,7 +16,7 @@ def get_bpm(peaks, clicks=4, bpm_rounding=True):
     samples_per_beat = (peaks[clicks] - peaks[0]) / clicks
     bpm = convert_spb_bpm(samples_per_beat)
     
-    if rounding:
+    if bpm_rounding:
         return round(bpm)
     else:
         return bpm

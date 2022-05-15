@@ -1,4 +1,6 @@
 
+from notation import INSTRUMENTS
+
 # FOR CLOSED HI-HAT SEE:
 # https://lilypond.org/doc/v2.22/Documentation/learning/articulations-and-dynamics#articulations
 
@@ -54,6 +56,15 @@ repeat_counter_bar_interval = 4
 ##########################
 ### Notation Functions ###
 ##########################
+
+def get_instruments(instrument_indexs):
+    instruments = []
+    for peak in instrument_indexs:
+        instruments.append([])
+        for instrument_index in peak:
+            instruments[-1].append(INSTRUMENTS[instrument_index])
+
+    return instruments
 
 def get_tuplet(lilypond_string):
     return '\\tuplet 3/2 { ' + lilypond_string + ' } '
