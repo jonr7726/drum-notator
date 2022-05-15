@@ -3,12 +3,12 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' # Removes warning messages from tensorf
 
 import tensorflow as tf
 
-from audio import EXTENSIONS
-from classifier import LABELS
-
 from audio import audio
 
 import pickle
+
+from audio import EXTENSIONS
+from classifier import LABELS, TRAINING_PATH
 
 labels = {} # Dictionary of labels used to classify instruments
 
@@ -31,7 +31,7 @@ for directory in os.listdir(TRAINING_PATH):
                 data_images = [] # Mel-spectrograms from audio file
                 data_labels = [] # Corresponding labels for each data_image
             
-                spectrograms, _ = audio_to_images(file, True)
+                spectrograms, _ = audio.audio_to_images(file, True)
 
                 for image in spectrograms:
                     data_images.append(image)
