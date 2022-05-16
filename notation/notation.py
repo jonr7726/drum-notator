@@ -287,21 +287,18 @@ class Voice():
 
             note_duration = beat.duration[note]
             note_instruments = beat.instruments[note]
-            while note_duration > 0:
-                largest_duration = (2**int(log2(sub_division * note_duration))) / sub_division # Represents the largest note that can be formed (rounds off remainder)
-                
-                if largest_duration * 1.5 <= note_duration:
-                    # Dotted note
-                    lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))) + ".")
 
-                    largest_duration = largest_duration * 1.5
-                else:
-                    lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))))
+            largest_duration = (2**int(log2(sub_division * note_duration))) / sub_division # Represents the largest note that can be formed (rounds off remainder)
+            
+            lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))))
 
-                lilypond_beat.instruments.append(lilypond_notation.get_lilypond_instruments(note_instruments, default=self.rest))
+            if largest_duration * 1.5 == note_duration:
+                # Dotted note
+                lilypond_beat.duration[-1] += "."
 
-                note_duration -= largest_duration
-                note_instruments = []
+            lilypond_beat.instruments.append(lilypond_notation.get_lilypond_instruments(note_instruments, default=self.rest))
+
+            assert(note_duration == largest_duration or note_duration == largest_duration * 1.5)
 
         self.bars[-1].append(lilypond_beat)
 
