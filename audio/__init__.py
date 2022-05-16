@@ -5,4 +5,4 @@ SMOOTH_DISTANCE = 2500 # Distance in samples to average datapoints over for find
 
 MIN_DISTANCE =  int(AUDIO_RATE / (MAX_BPM / 60))
 
-EXTENSIONS = ['mp3']
+EXTENSIONS = ["mp3"]

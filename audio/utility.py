@@ -34,7 +34,7 @@ def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, 
     absolute_amplitudes = tf.squeeze(tf.nn.convolution(
         tf.constant(absolute_amplitudes, shape=(1, len(absolute_amplitudes), 1)),
         tf.constant(filter, shape=(smooth_distance,1,1)),
-        padding='SAME')).numpy()
+        padding="SAME")).numpy()
     absolute_amplitudes = absolute_amplitudes / max(absolute_amplitudes) # Normalise again
     
     peaks, _ = find_peaks(absolute_amplitudes, distance=min_distance, prominence=min_prominence)
@@ -42,8 +42,8 @@ def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, 
     # Visualize peaks to ensure validity of data
     if visualise:
         plt.plot(absolute_amplitudes)
-        plt.plot(peaks, absolute_amplitudes[peaks], 'x')
-        plt.title(file_name.split('/')[-1])
+        plt.plot(peaks, absolute_amplitudes[peaks], "x")
+        plt.title(file_name.split("/")[-1])
         plt.show()
         
         print(file_name)
@@ -61,15 +61,17 @@ def get_images(tensor, peaks, min_distance):
     # Make mel-spectograms from peaks
     images = []
     for peak in peaks:
-        # Get audio slice at peak
-        peak_slice = tensor[peak:peak+min_distance]
+        # Ensure file does not end before minimum distance after peak is reached
+        if peak + min_distance < len(tensor.numpy()):
+            # Get audio slice at peak
+            peak_slice = tensor[peak:peak + min_distance]
 
-        # Convert to spectrogram
-        spectrogram = tfio.audio.spectrogram(peak_slice, nfft=1024, window=512, stride=256)
+            # Convert to spectrogram
+            spectrogram = tfio.audio.spectrogram(peak_slice, nfft=1024, window=512, stride=256)
 
-        # Convert to mel-spectrogram and add to list
-        images.append(tfio.audio.melscale(spectrogram, rate=AUDIO_RATE, mels=128, fmin=0, fmax=AUDIO_RATE/2))
-    
+            # Convert to mel-spectrogram and add to list
+            images.append(tfio.audio.melscale(spectrogram, rate=AUDIO_RATE, mels=128, fmin=0, fmax=AUDIO_RATE/2))
+
     # Add empty channel dimention to image data
     images = tf.expand_dims(images, axis=-1)
     

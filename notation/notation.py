@@ -9,7 +9,7 @@ import numpy as np
 from math import log2
 from tensorflow import argmax
 
-from mingus.extra.lilypond import to_png
+from mingus.extra.lilypond import to_pdf
 
 # Splits instruments and durations up into each valid note (adds rests)
 def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
@@ -47,7 +47,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
 
                 if abs(correlation) > 0 and abs(1 - (bpm_adjustment + adjustment)) < 0.02:
                     bpm_adjustment += adjustment
-                    print('bpm:', bpm_adjustment)
+                    print("bpm:", bpm_adjustment)
             remainders.clear()
             accumulated_duration_start = accumulated_duration
 
@@ -74,7 +74,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
         # Round to triplets
         note_duration = round(3 * note_duration) / 3
         if note_duration == 0:
-            print('triplet', peak_instruments, accumulated_duration)
+            print("triplet", peak_instruments, accumulated_duration)
             note_duration = 1/3
     
         peak_duration -= note_duration
@@ -116,15 +116,21 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
 
         triplet_count = round(triplets)
 
+        total_duration = peak_duration
+
         while triplet_count < 3:
             if index_of_next_peak >= len(durations) - 1:
                 # Next duration goes outside of beat (as end of score)
                 break
 
+            #print("\n", durations[index_of_next_peak], index_of_next_peak)
             next_peak_duration = bpm_adjustment * durations[index_of_next_peak]
 
-            if (triplet_count / 3) + next_peak_duration > (1 + smallest_error):
+            total_duration += next_peak_duration
+
+            if total_duration > (1.25):
                 # Next duration goes outside of beat
+                #print("hi")
                 break
 
             next_triplets = 3 * next_peak_duration
@@ -137,7 +143,9 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
 
             index_of_next_peak += 1
 
-        if sum(triplet_errors) <= sum(quaver_errors):
+        print(triplet_errors, quaver_errors, index_of_next_peak)
+
+        if sum(triplet_errors) < sum(quaver_errors) and len(triplet_errors) > 1:
             return True
         else:
             return False
@@ -147,6 +155,8 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
     while i < len(instruments): # until no more peaks
         peak_instruments = instruments[i]
         peak_duration = bpm_adjustment * (durations[i] + last_peak_remainder)
+
+        #print(peak_duration, "|", durations[i])
 
         if i == len(instruments) - 1:
             peak_duration = 4 - (accumulated_duration % 4)
@@ -175,7 +185,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
 
                 else:
                     # Triplet or Quaver start of beat
-                    triplet_beat = set_triplet_beat(i)
+                    triplet_beat = set_triplet_beat(i + 1)
                     if triplet_beat:
                         add_note_triplet(peak_duration)
                     else:
@@ -205,7 +215,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
             handle_bpm_error(peak_duration)
 
     # Add crochet triplet groupings in
-    '''if triplets_enabled:
+    """if triplets_enabled:
         for bar in range(len(notes)):
             for beat in range(len(notes[bar])):
                 if beat >= len(notes[bar]):
@@ -225,7 +235,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
                     # Merge beats to make crochet triplet
                     notes[bar][beat][1][1] = 2/3
                     notes[bar][beat].append([notes[bar][beat + 1][1][0], 2/3])
-                    notes[bar].pop(beat + 1)'''
+                    notes[bar].pop(beat + 1)"""
 
     return notes
 
@@ -244,7 +254,7 @@ class LilypondBeat(Beat):
         self.triplet_beat = triplet_beat
 
     def get_lilypond_string(self):
-        lilypond_string = ' '.join([self.instruments[i] + self.duration[i] for i in range(self.length())])
+        lilypond_string = " ".join([self.instruments[i] + self.duration[i] for i in range(self.length())])
 
         if self.triplet_beat:
             lilypond_string = lilypond_notation.get_tuplet(lilypond_string)
@@ -282,7 +292,7 @@ class Voice():
                 
                 if largest_duration * 1.5 <= note_duration:
                     # Dotted note
-                    lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))) + '.')
+                    lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))) + ".")
 
                     largest_duration = largest_duration * 1.5
                 else:
@@ -296,7 +306,7 @@ class Voice():
         self.bars[-1].append(lilypond_beat)
 
     def get_lilypond_bars(self):
-        lilypond_bars = [' '.join([beat.get_lilypond_string() for beat in bar]) for bar in self.bars]
+        lilypond_bars = [" ".join([beat.get_lilypond_string() for beat in bar]) for bar in self.bars]
 
         return lilypond_bars
 
@@ -362,7 +372,7 @@ class Score:
                         HI_HAT in note[0] and
                         (lilypond_notation.note_has_instruments(note[0], HI_HAT_FOOT_IMPLICATORS))
                     ):
-                        HI_HAT_FOOT = True
+                        beat_down_hi_hat[-1] = True
 
             return beat_down_bass, beat_down_snare, beat_down_hi_hat
 
@@ -423,19 +433,18 @@ class Score:
             down_voice = lilypond_notation.make_bars(down_bars)
 
         else:
-            # (Add ['skip1', 'skip2'] to end of list to append final bars in loop)
-            up_bars += ['skip1', 'skip2']
-            down_bars += ['skip1', 'skip2']
+            # (Add ["skip1", "skip2"] to end of list to append final bars in loop)
+            up_bars += ["skip1", "skip2"]
+            down_bars += ["skip1", "skip2"]
 
-            up_voice = ''
-            down_voice = ''
+            up_voice = ""
+            down_voice = ""
 
-            last_up_bars = ['skip', 'skip']
-            last_down_bars = ['skip', 'skip']
+            last_up_bars = ["skip", "skip"]
+            last_down_bars = ["skip", "skip"]
             repeating_bars = 0
             repeat = 0
             for up_bar, down_bar in zip(up_bars, down_bars):
-                print(up_bar, last_up_bars[1])
                 if up_bar == last_up_bars[0] and down_bar == last_down_bars[0] and repeating_bars != 2:
                     # Bar same as last bar
                     repeat += 1
@@ -462,8 +471,8 @@ class Score:
                         repeating_bars = 0
 
                         # Clear last bars so next itterations do not repeat off them
-                        last_up_bars[0] = 'skip' # (Only need to do it with one)
-                    elif last_up_bars[1] != 'skip': # (If this is not true, then last_up_bars[1] has already been written in a repeat (or its the original value and thus does not exist))
+                        last_up_bars[0] = "skip" # (Only need to do it with one)
+                    elif last_up_bars[1] != "skip": # (If this is not true, then last_up_bars[1] has already been written in a repeat (or its the original value and thus does not exist))
                         # Add last bar normally
                         up_voice += lilypond_notation.make_bar(last_up_bars[1])
                         down_voice += lilypond_notation.make_bar(last_down_bars[1])
@@ -478,6 +487,12 @@ class Score:
         return lilypond_notation.make_score(up_voice, down_voice)
         
     def create_score(self, file_output_path):
-        n = self.get_notation_string()
-        print(n)
-        to_png(n, file_output_path)
+        notation_string = self.get_notation_string()
+        
+        # Write notation to text file (for editing)
+        text_file = open(file_output_path + ".txt", "w")
+        text_file.write(notation_string)
+        text_file.close()
+
+        # Write notation to pdf
+        to_pdf(notation_string, file_output_path)

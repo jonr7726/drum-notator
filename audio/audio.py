@@ -5,13 +5,14 @@ from audio import utility
 from audio import bpm_functions
 from audio import MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE
       
+# Returns just Mel-spectrograms
 def audio_to_images(file, visualise):
     tensor = utility.get_tensor(file)
     peaks = utility.get_peaks(tensor, file, MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE, visualise=visualise)
     
-    return utility.get_images(tensor, peaks, MIN_DISTANCE), peaks
+    return utility.get_images(tensor, peaks, MIN_DISTANCE)
     
-# Returns images, peaks, bpm
+# Returns Mel-spectrograms, peaks, and bpm
 def audio_to_images_notation(file, visualise=False, clicks=4, cut_clicks=True, bpm_rounding=True):
     tensor = utility.get_tensor(file)
     peaks = utility.get_peaks(tensor, file, MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE, visualise)
