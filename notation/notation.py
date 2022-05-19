@@ -288,9 +288,11 @@ class Voice():
             note_duration = beat.duration[note]
             note_instruments = beat.instruments[note]
 
-            largest_duration = (2**int(log2(sub_division * note_duration))) / sub_division # Represents the largest note that can be formed (rounds off remainder)
+            largest_duration = 2**int(log2(sub_division * note_duration)) # Represents the largest note that can be formed (rounds off any dot remainders)
             
-            lilypond_beat.duration.append(str(int(sub_division_lilypond / (sub_division * largest_duration))))
+            lilypond_beat.duration.append(str(int(sub_division_lilypond / largest_duration)))
+
+            largest_duration /= sub_division # Convert back to regular duration to test if dotted note
 
             if largest_duration * 1.5 == note_duration:
                 # Dotted note

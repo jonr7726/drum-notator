@@ -13,7 +13,7 @@ style_table = """
     (hihat cross #f 5)
     (openhihat cross "open" 5)
     (closedhihat cross "stopped" 5)
-    (pedalhihat cross #f -3)
+    (pedalhihat cross #f -5)
 
     (ridecymbal cross #f 4)
     (ridebell triangle #f 4)

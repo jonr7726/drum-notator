@@ -38,14 +38,12 @@ for file in os.listdir(PATH_INPUT):
             print("Invalid input, continuing.")
 
         dynamic_bpm = get_boolean_input("Use dynamic BPM (use if not playing to a click)? (Y/N) ")
-        triplets = get_boolean_input("Use triplets? (Y/N) ")
-        repeats = get_boolean_input("Use bar repeats in notation? (Y/N) ")
 
         # Get durations
         durations = query_model.get_durations(peaks, bpm_functions.convert_spb_bpm(bpm))
 
         # Initialise score
-        score = notation.Score(instrument_indexs, durations, triplets, dynamic_bpm, repeats)
+        score = notation.Score(instrument_indexs, durations, True, dynamic_bpm, True)
         
         # Convert score to notation and save file
         score.create_score(PATH_OUTPUT + file.split(".")[0])
