@@ -22,7 +22,7 @@ for directory in os.listdir(TRAINING_PATH):
                 data_images += data[0]
                 data_labels += data[1]
         
-# Create instance of model
+# Create model
 model = tf.keras.Sequential(
     [
         tf.keras.layers.Conv2D(6, (3, 3), activation="relu", input_shape=(24, 128, 1)),
@@ -50,7 +50,7 @@ model.compile(
     metrics=["accuracy"] # Measure success by how often our output is correct
 )
 
-# Train model again, using multiple instruments as well
+# Train model
 model.fit(
     train_dataset, # Expected Inputs and Outputs
     epochs=5 # Number of times to iterate over data

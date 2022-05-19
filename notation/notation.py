@@ -12,7 +12,7 @@ from tensorflow import argmax
 from mingus.extra.lilypond import to_pdf
 
 # Splits instruments and durations up into each valid note (adds rests)
-def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
+def get_notes(instruments, durations, triplets_enabled, duration_adjustments = []):
     smallest_error = (1/4)/2 # (constant)
 
     notes = []
@@ -28,28 +28,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
     remainders = []
     accumulated_duration_start = 0
 
-    bpm_adjustment = 1
-
-    def handle_bpm_error(remainder):
-        nonlocal accumulated_duration_start, bpm_adjustment
-
-        remainders.append(remainder)
-
-        if accumulated_duration - accumulated_duration_start > 4:
-            if len(remainders) >= 3:
-                correlation = np.corrcoef(range(len(remainders)), remainders)[0,1]
-                adjustment = (remainders[0] - remainders[-1]) / len(remainders)
-
-                if adjustment > 0.005:
-                    adjustment = 0.005
-                elif adjustment < -0.005:
-                    adjustment = -0.005
-
-                if abs(correlation) > 0 and abs(1 - (bpm_adjustment + adjustment)) < 0.02:
-                    bpm_adjustment += adjustment
-                    print("bpm:", bpm_adjustment)
-            remainders.clear()
-            accumulated_duration_start = accumulated_duration
+    duration_adjustment = 1
 
     # Adds quavers within a beat or whole note on an on-beat
     def add_note_quaver(note_duration):
@@ -101,7 +80,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
     # Determines whether beat is triplet, or quaver
     # TODO add polyrhythm handling
     def set_triplet_beat(index_of_next_peak):
-        nonlocal bpm_adjustment
+        nonlocal duration_adjustment
 
         if not triplets_enabled:
             return False
@@ -124,7 +103,7 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
                 break
 
             #print("\n", durations[index_of_next_peak], index_of_next_peak)
-            next_peak_duration = bpm_adjustment * durations[index_of_next_peak]
+            next_peak_duration = duration_adjustment * durations[index_of_next_peak]
 
             total_duration += next_peak_duration
 
@@ -153,8 +132,11 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
     i = 0
     last_peak_remainder = 0
     while i < len(instruments): # until no more peaks
+        if len(duration_adjustments) != 0:
+            duration_adjustment = duration_adjustments[i]
+
         peak_instruments = instruments[i]
-        peak_duration = bpm_adjustment * (durations[i] + last_peak_remainder)
+        peak_duration = (duration_adjustment * durations[i]) + last_peak_remainder
 
         #print(peak_duration, "|", durations[i])
 
@@ -210,9 +192,6 @@ def get_notes(instruments, durations, triplets_enabled, dynamic_bpm):
 
         i += 1
         last_peak_remainder = peak_duration
-
-        if dynamic_bpm:
-            handle_bpm_error(peak_duration)
 
     # Add crochet triplet groupings in
     """if triplets_enabled:
@@ -311,13 +290,17 @@ class Voice():
 
 class Score:
 
-    def __init__(self, instrument_indexs, durations, triplets_enabled, dynamic_bpm, use_repeats):
+    def __init__(self, instrument_indexs, durations, triplets_enabled, use_repeats, duration_adjustments = []):
         if use_repeats:
             self.max_repeats = MAX_REPEATS
         else:
             self.max_repeats = 0
 
-        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled, dynamic_bpm)
+        print(instrument_indexs)
+        print(durations)
+        input(duration_adjustments)
+
+        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled, duration_adjustments)
 
         self.up = Voice(rest=REST)
         self.down = Voice(rest=INVISIBLE_REST)
@@ -487,6 +470,8 @@ class Score:
         
     def create_score(self, file_output_path):
         notation_string = self.get_notation_string()
+
+        input(notation_string)
         
         # Write notation to text file (for editing)
         text_file = open(file_output_path + ".txt", "w")

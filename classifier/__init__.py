@@ -1,4 +1,4 @@
-TRAINING_PATH = "dat/training/"
+TRAINING_PATH = "dat/training/instruments/"
 MODEL_PATH = "classifier/drum_classifier_model"
 MIN_CONFIDENCE = 0.5
 

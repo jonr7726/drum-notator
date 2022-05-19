@@ -40,7 +40,7 @@ for file in os.listdir(PATH_INPUT):
         dynamic_bpm = get_boolean_input("Use dynamic BPM (use if not playing to a click)? (Y/N) ")
 
         # Get durations
-        durations = query_model.get_durations(peaks, bpm_functions.convert_spb_bpm(bpm))
+        durations = query_model.get_durations(bpm_functions.convert_spb_bpm(bpm), peaks)
 
         # Initialise score
         score = notation.Score(instrument_indexs, durations, True, dynamic_bpm, True)

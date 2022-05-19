@@ -30,12 +30,12 @@ def get_instruments(peak_spectograms):
 	return instruments
 
 # Gets durations of peaks (as fraction of beat)
-def get_durations(peaks, samples_per_beat):
+def get_durations(spb, peaks):
 	durations = []
 
 	# Find durations with distances between peaks
 	for i in range(len(peaks) - 1):
-		durations.append((peaks[i + 1] - peaks[i]) / samples_per_beat)
+		durations.append((peaks[i + 1] - peaks[i]) / spb)
 
 	# Fill remaining bar (no next peak to distance off)
 	durations.append(4 - (sum(durations) % 4))
