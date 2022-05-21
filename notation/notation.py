@@ -296,9 +296,8 @@ class Score:
         else:
             self.max_repeats = 0
 
-        print(instrument_indexs)
-        print(durations)
-        input(duration_adjustments)
+        # Override repeats to prevent this from running as there are currently errors in that module
+        self.max_repeats = 0
 
         notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled, duration_adjustments)
 
@@ -410,10 +409,8 @@ class Score:
         up_bars = self.up.get_lilypond_bars()
         down_bars = self.down.get_lilypond_bars()
 
-        if self.max_repeats == 0:
-            up_voice = lilypond_notation.make_bars(up_bars)
-            down_voice = lilypond_notation.make_bars(down_bars)
-
+        up_voice = lilypond_notation.make_bars(up_bars)
+        down_voice = lilypond_notation.make_bars(down_bars)
         else:
             # (Add ["skip1", "skip2"] to end of list to append final bars in loop)
             up_bars += ["skip1", "skip2"]
@@ -436,6 +433,7 @@ class Score:
                     repeat += 0.5
                     repeating_bars = 2
                 else:
+                    assert(repeat != 0.5) # TODO fix error when this condition occurs
                     if repeat > 0:
                         if repeating_bars == 2:
                             if repeat % 1 != 0:
