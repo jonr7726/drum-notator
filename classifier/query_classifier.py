@@ -12,8 +12,6 @@ def get_instruments(peak_spectograms):
 	instruments = []
 
 	for classification_labels in model(peak_spectograms).numpy():
-		print(classification_labels.round(2))
-
 		# Find instruments in each peak
 		peak_instruments = []
 		for i in range(0, len(classification_labels)):

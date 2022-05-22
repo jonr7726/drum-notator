@@ -24,7 +24,6 @@ def get_tensor(file):
     
     return tensor
 
-
 def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, visualise):
     # Get absolute value of amplitudes (for volume)
     absolute_amplitudes = abs(tensor.numpy())
@@ -55,7 +54,6 @@ def get_peaks(tensor, file_name, min_distance, min_prominence, smooth_distance, 
             print("Did not enter valid value, moving to next file.")
         
     return peaks
-
 
 def get_images(tensor, peaks, min_distance):
     # Make mel-spectograms from peaks

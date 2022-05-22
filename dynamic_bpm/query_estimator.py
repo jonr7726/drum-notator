@@ -30,11 +30,12 @@ def get_durations_dynamic(initial_spb, peaks):
 	distances.extend(padding)
 
 	durations = []
-	for batch in range(int((len(peaks) - 1) / BATCH_SIZE)):
+	for batch in range(int(len(distances) / BATCH_SIZE)):
 		spbs = model(tf.constant(distances[batch:(batch + BATCH_SIZE)], shape=(1, BATCH_SIZE, 1), dtype=tf.float32)).numpy()
 		for i in range(BATCH_SIZE):
-			# Find durations with distances between peaks and spb at each peak
-			durations.append((peaks[i + 1 + (BATCH_SIZE * batch)] - peaks[i + (BATCH_SIZE * batch)]) * (spbs[0][i][0]/ initial_spb))
+			if i + 1 + (BATCH_SIZE * batch) < len(peaks):
+				# Find durations with distances between peaks and spb at each peak
+				durations.append((peaks[i + 1 + (BATCH_SIZE * batch)] - peaks[i + (BATCH_SIZE * batch)]) / (spbs[0][i][0] * initial_spb))
 	# Fill remaining bar (no next peak to distance off)
 	durations.append(4 - (sum(durations) % 4))
 

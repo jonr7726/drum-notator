@@ -21,8 +21,8 @@ model = tf.keras.models.Sequential([
     tf.keras.layers.Masking(mask_value=MASK_VAL, batch_input_shape=(1, BATCH_SIZE, 1)),
     tf.keras.layers.LSTM(30, stateful=True, return_sequences=True),
     tf.keras.layers.Dropout(0.2),
-    tf.keras.layers.Dense(25),
-    tf.keras.layers.Dense(10),
+    tf.keras.layers.Dense(10, activation="relu"),
+    tf.keras.layers.Dense(5, activation="relu"),
     tf.keras.layers.Dense(1)
 ])
 
@@ -33,35 +33,39 @@ model.compile(
     metrics=["mean_absolute_error"]
 )
 
+# Train model on file
+def train_file(file_inputs, file_outputs):
+    file_loss = 0
+    file_absolute_error = 0
+
+    # Add masking values to end to ensure fixed batch size
+    if len(file_inputs) % BATCH_SIZE != 0:
+        padding = [MASK_VAL for i in range(BATCH_SIZE - (len(file_inputs) % BATCH_SIZE))]
+        file_inputs.extend(padding)
+        file_outputs.extend(padding)
+
+    for batch in range(0, len(file_inputs), BATCH_SIZE):
+        # Format training data batch
+        batch_in = tf.constant(file_inputs[batch:(batch + BATCH_SIZE)], shape=(1, BATCH_SIZE, 1), dtype=tf.float32)
+        batch_out = tf.constant(file_outputs[batch:(batch + BATCH_SIZE)], shape=(1, BATCH_SIZE, 1), dtype=tf.float32)
+        # Train model with batch
+        loss, absolute_error = model.train_on_batch(batch_in, batch_out)
+        file_loss += loss
+        file_absolute_error += absolute_error
+
+    return file_loss / (len(file_inputs) / BATCH_SIZE), file_absolute_error / (len(file_inputs) / BATCH_SIZE)
+
 # Train model
 losses = []
 accuracies = []
-for epoch in range(10):
-    metrics = []
+for epoch in range(20):
     total_loss = 0
     total_absolute_error = 0
     for file_inputs, file_outputs in zip(train_inputs, train_outputs):
-        file_loss = 0
-        file_absolute_error = 0
+        file_loss, file_absolute_error = train_file(file_inputs, file_outputs)
 
-        # Add masking values to end to ensure fixed batch size
-        if len(file_inputs) % BATCH_SIZE != 0:
-            padding = [MASK_VAL for i in range(BATCH_SIZE - (len(file_inputs) % BATCH_SIZE))]
-            file_inputs.extend(padding)
-            file_outputs.extend(padding)
-
-        for batch in range(0, len(file_inputs), BATCH_SIZE):
-            # Format training data batch
-            batch_in = tf.constant(file_inputs[batch:(batch + BATCH_SIZE)], shape=(1, BATCH_SIZE, 1), dtype=tf.float32)
-            batch_out = tf.constant(file_outputs[batch:(batch + BATCH_SIZE)], shape=(1, BATCH_SIZE, 1), dtype=tf.float32)
-            #print(tf.math.reduce_sum(tf.abs(batch_out - tf.abs(model(batch_in)))).numpy() / BATCH_SIZE)
-            # Train model with batch
-            loss, absolute_error = model.train_on_batch(batch_in, batch_out)
-            file_loss += loss
-            file_absolute_error += absolute_error
-
-        total_loss += file_loss / (len(file_inputs) / BATCH_SIZE)
-        total_absolute_error += file_absolute_error / (len(file_inputs) / BATCH_SIZE)
+        total_loss += file_loss
+        total_absolute_error += file_absolute_error
 
         # Reset states for next file
         model.reset_states()
