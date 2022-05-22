@@ -4,7 +4,7 @@ os.environ["TF_CPP_MIN_LOG_LEVEL"] = "2" # Removes warning messages from tensorf
 import tensorflow as tf
 
 from audio import audio, bpm_functions
-from notation import notation
+from notation.score import Score
 from classifier import query_classifier
 from dynamic_bpm import query_estimator
 
@@ -50,7 +50,7 @@ for file in os.listdir(PATH_INPUT):
         # Override repeats to prevent this from running as there are currently errors in that module
 
         # Initialise score
-        score = notation.Score(instrument_indexs, durations, repeats)
+        score = Score(instrument_indexs, durations, repeats)
         
         # Convert score to notation and save file
         score.create_score(PATH_OUTPUT + file.split(".")[0])

@@ -1,209 +1,15 @@
 from notation import lilypond_notation
+from notation.notes import Notes
 
 from notation import MAX_REPEATS
 from notation import REST, INVISIBLE_REST
 from notation import BASS, SNARE, FLOOR_TOM, RIDE, HI_HAT, HI_HAT_FOOT
 from notation import CYMBALS, HI_HAT_FOOT_IMPLICATORS
 
-import numpy as np
 from math import log2
 from tensorflow import argmax
 
 from mingus.extra.lilypond import to_pdf
-
-# Splits instruments and durations up into each valid note (adds rests)
-def get_notes(instruments, durations, triplets_enabled):
-    smallest_error = (1/4)/2 # (constant)
-
-    notes = []
-    # formated as [bar][beat/s][note/s][0 = instruments, 1 = duration]
-    # contains array for every bar, but not necessarily every beat, as notes longer than a beat exist
-
-    accumulated_duration = 0
-
-    peak_instruments = None
-    peak_duration = None
-    triplet_beat = None
-
-    remainders = []
-    accumulated_duration_start = 0
-
-    # Adds quavers within a beat or whole note on an on-beat
-    def add_note_quaver(note_duration):
-        nonlocal peak_instruments, peak_duration, accumulated_duration
-
-        # Round to nearest semiquaver
-        note_duration = round(4 * note_duration) / 4
-    
-        peak_duration -= note_duration
-
-        # Accumulate duration (after rounding)
-        accumulated_duration += note_duration
-
-        # Add note
-        notes[-1][-1].append([peak_instruments, note_duration])
-
-        peak_instruments = [] # Set preceeding notes in this peak to rests
-
-    def add_note_triplet(note_duration):
-        nonlocal peak_instruments, peak_duration, accumulated_duration
-
-        # Round to triplets
-        note_duration = round(3 * note_duration) / 3
-        if note_duration == 0:
-            print("triplet", peak_instruments, accumulated_duration)
-            note_duration = 1/3
-    
-        peak_duration -= note_duration
-
-        # Accumulate duration (after rounding)
-        accumulated_duration += note_duration
-        # Handle tripplet rounding error
-        accumulated_duration = round(3 * accumulated_duration) / 3
-
-        # Add note
-        notes[-1][-1].append([peak_instruments, note_duration])
-
-        # Set preceeding notes in this peak to rests
-        peak_instruments = []
-
-    def add_bar():
-        notes.append([])
-
-    def add_beat():
-        nonlocal triplet_beat
-        notes[-1].append([])
-        triplet_beat = None
-
-    # Determines whether beat is triplet, or quaver
-    # TODO add polyrhythm handling
-    def set_triplet_beat(index_of_next_peak):
-        if not triplets_enabled:
-            return False
-
-        assert(int(peak_duration + smallest_error) == 0) # assert no whole beats
-
-        triplets = 3 * peak_duration
-        quavers = 4 * peak_duration
-
-        triplet_errors = [abs(triplets - round(triplets))]
-        quaver_errors = [abs(quavers - round(quavers))]
-
-        triplet_count = round(triplets)
-
-        total_duration = peak_duration
-
-        while triplet_count < 3:
-            if index_of_next_peak >= len(durations) - 1:
-                # Next duration goes outside of beat (as end of score)
-                break
-
-            next_peak_duration = durations[index_of_next_peak]
-
-            total_duration += next_peak_duration
-
-            if total_duration > (1.25):
-                # Next duration goes outside of beat
-                break
-
-            next_triplets = 3 * next_peak_duration
-            next_quavers = 4 * next_peak_duration
-            
-            triplet_errors.append(abs(next_triplets - round(next_triplets)))
-            quaver_errors.append(abs(next_quavers - round(next_quavers)))
-            
-            triplet_count += round(next_triplets)
-
-            index_of_next_peak += 1
-
-        if sum(triplet_errors) < sum(quaver_errors) and len(triplet_errors) > 1:
-            return True
-        else:
-            return False
-
-    i = 0
-    last_peak_remainder = 0
-    while i < len(instruments): # until no more peaks
-        peak_instruments = instruments[i]
-        peak_duration = durations[i] + last_peak_remainder
-
-        if i == len(instruments) - 1:
-            peak_duration = 4 - (accumulated_duration % 4)
-
-        while peak_duration > smallest_error:
-            duration_left_in_beat = 1 - (accumulated_duration % 1)
-            duration_left_in_bar = 4 - (accumulated_duration % 4)
-
-            if duration_left_in_bar == 4:
-                # Down beat
-                add_bar()
-
-            if duration_left_in_beat == 1:
-                # On-beat
-                add_beat()
-
-                # Whole beat/s
-                whole_duration = int(peak_duration + smallest_error) # (smallest_error rounds it up if applicable)
-
-                if whole_duration > 0:
-                    if whole_duration > duration_left_in_bar:
-                        # Spill to next bar
-                        add_note_quaver(duration_left_in_bar)
-                    else:
-                        add_note_quaver(whole_duration)
-
-                else:
-                    # Triplet or Quaver start of beat
-                    triplet_beat = set_triplet_beat(i + 1)
-                    if triplet_beat:
-                        add_note_triplet(peak_duration)
-                    else:
-                        add_note_quaver(peak_duration)
-
-            else:
-                # Inside beat
-                assert(triplet_beat != None)
-
-                if duration_left_in_beat - peak_duration < smallest_error:
-                    # Spill outside of beat
-                    if triplet_beat:
-                        add_note_triplet(duration_left_in_beat)
-                    else:
-                        add_note_quaver(duration_left_in_beat)
-
-                else:
-                    if triplet_beat:
-                        add_note_triplet(peak_duration)
-                    else:
-                        add_note_quaver(peak_duration)
-
-        i += 1
-        last_peak_remainder = peak_duration
-
-    # Add crochet triplet groupings in
-    """if triplets_enabled:
-        for bar in range(len(notes)):
-            for beat in range(len(notes[bar])):
-                if beat >= len(notes[bar]):
-                    print("---DEBUG: break crochet triplets---")
-                    break
-
-                if (
-                    # If has 2 notes in beat, and next beat exists in bar and also has 2 notes
-                    len(notes[bar][beat]) == 2 and
-                    beat + 1 < len(notes[bar]) and len(notes[bar][beat + 1]) == 2 and
-                    # and each note is a crochet triplet
-                    notes[bar][beat][0][1] == 2/3 and 
-                    notes[bar][beat][1][1] == 1/3 and
-                    notes[bar][beat + 1][0][1] == 1/3 and notes[bar][beat + 1][0][0] == []
-                    and notes[bar][beat + 1][1][1] == 2/3
-                ):                    
-                    # Merge beats to make crochet triplet
-                    notes[bar][beat][1][1] = 2/3
-                    notes[bar][beat].append([notes[bar][beat + 1][1][0], 2/3])
-                    notes[bar].pop(beat + 1)"""
-
-    return notes
 
 class Beat:
     def __init__(self, instruments, duration):
@@ -277,13 +83,13 @@ class Voice():
 
 class Score:
 
-    def __init__(self, instrument_indexs, durations, use_repeats, triplets_enabled=True):
+    def __init__(self, instrument_indexs, durations, use_repeats=True, triplets_enabled=True):
         if use_repeats:
             self.max_repeats = MAX_REPEATS
         else:
             self.max_repeats = 0
 
-        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled)
+        notes = Notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled).get_notes()
 
         self.up = Voice(rest=REST)
         self.down = Voice(rest=INVISIBLE_REST)
@@ -397,6 +203,9 @@ class Score:
             up_voice = lilypond_notation.make_bars(up_bars)
             down_voice = lilypond_notation.make_bars(down_bars)
         else:
+            # Add repeats to notation
+            # TODO fix this code
+
             # (Add ["skip1", "skip2"] to end of list to append final bars in loop)
             up_bars += ["skip1", "skip2"]
             down_bars += ["skip1", "skip2"]

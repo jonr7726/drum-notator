@@ -22,3 +22,5 @@ CYMBALS = [HI_HAT, HI_HAT_OPEN, HI_HAT_CLOSED, HI_HAT_FOOT, CRASH, RIDE, RIDE_BE
 HI_HAT_FOOT_IMPLICATORS = [RIDE, RIDE_BELL, FLOOR_TOM] # (Non-hihat instruments that must be played with the right hand)
 
 INSTRUMENTS = [BASS, SNARE, TOM_1, TOM_2, FLOOR_TOM, HI_HAT, HI_HAT_OPEN, RIDE, RIDE_BELL, CRASH] # Used for notation, must be in same order as labels from classifier output
+
+SMALLEST_ERROR = (1/4)/2
