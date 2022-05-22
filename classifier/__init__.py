@@ -1,5 +1,5 @@
-TRAINING_PATH = "dat/training/instruments/"
-MODEL_PATH = "classifier/drum_classifier_model"
+CLASSIFIER = "classifier/drum_classifier_model"
+CLASSIFIER_TRAINING = "classifier/training_dat.p"
 MIN_CONFIDENCE = 0.5
 
 BUFFER_SIZE = 4096

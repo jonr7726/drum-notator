@@ -12,7 +12,7 @@ from tensorflow import argmax
 from mingus.extra.lilypond import to_pdf
 
 # Splits instruments and durations up into each valid note (adds rests)
-def get_notes(instruments, durations, triplets_enabled, duration_adjustments = []):
+def get_notes(instruments, durations, triplets_enabled):
     smallest_error = (1/4)/2 # (constant)
 
     notes = []
@@ -27,8 +27,6 @@ def get_notes(instruments, durations, triplets_enabled, duration_adjustments = [
 
     remainders = []
     accumulated_duration_start = 0
-
-    duration_adjustment = 1
 
     # Adds quavers within a beat or whole note on an on-beat
     def add_note_quaver(note_duration):
@@ -80,8 +78,6 @@ def get_notes(instruments, durations, triplets_enabled, duration_adjustments = [
     # Determines whether beat is triplet, or quaver
     # TODO add polyrhythm handling
     def set_triplet_beat(index_of_next_peak):
-        nonlocal duration_adjustment
-
         if not triplets_enabled:
             return False
 
@@ -102,14 +98,12 @@ def get_notes(instruments, durations, triplets_enabled, duration_adjustments = [
                 # Next duration goes outside of beat (as end of score)
                 break
 
-            #print("\n", durations[index_of_next_peak], index_of_next_peak)
-            next_peak_duration = duration_adjustment * durations[index_of_next_peak]
+            next_peak_duration = durations[index_of_next_peak]
 
             total_duration += next_peak_duration
 
             if total_duration > (1.25):
                 # Next duration goes outside of beat
-                #print("hi")
                 break
 
             next_triplets = 3 * next_peak_duration
@@ -122,8 +116,6 @@ def get_notes(instruments, durations, triplets_enabled, duration_adjustments = [
 
             index_of_next_peak += 1
 
-        print(triplet_errors, quaver_errors, index_of_next_peak)
-
         if sum(triplet_errors) < sum(quaver_errors) and len(triplet_errors) > 1:
             return True
         else:
@@ -132,13 +124,8 @@ def get_notes(instruments, durations, triplets_enabled, duration_adjustments = [
     i = 0
     last_peak_remainder = 0
     while i < len(instruments): # until no more peaks
-        if len(duration_adjustments) != 0:
-            duration_adjustment = duration_adjustments[i]
-
         peak_instruments = instruments[i]
-        peak_duration = (duration_adjustment * durations[i]) + last_peak_remainder
-
-        #print(peak_duration, "|", durations[i])
+        peak_duration = durations[i] + last_peak_remainder
 
         if i == len(instruments) - 1:
             peak_duration = 4 - (accumulated_duration % 4)
@@ -290,16 +277,13 @@ class Voice():
 
 class Score:
 
-    def __init__(self, instrument_indexs, durations, triplets_enabled, use_repeats, duration_adjustments = []):
+    def __init__(self, instrument_indexs, durations, use_repeats, triplets_enabled=True):
         if use_repeats:
             self.max_repeats = MAX_REPEATS
         else:
             self.max_repeats = 0
 
-        # Override repeats to prevent this from running as there are currently errors in that module
-        self.max_repeats = 0
-
-        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled, duration_adjustments)
+        notes = get_notes(lilypond_notation.get_instruments(instrument_indexs), durations, triplets_enabled)
 
         self.up = Voice(rest=REST)
         self.down = Voice(rest=INVISIBLE_REST)
@@ -409,8 +393,9 @@ class Score:
         up_bars = self.up.get_lilypond_bars()
         down_bars = self.down.get_lilypond_bars()
 
-        up_voice = lilypond_notation.make_bars(up_bars)
-        down_voice = lilypond_notation.make_bars(down_bars)
+        if self.max_repeats == 0:
+            up_voice = lilypond_notation.make_bars(up_bars)
+            down_voice = lilypond_notation.make_bars(down_bars)
         else:
             # (Add ["skip1", "skip2"] to end of list to append final bars in loop)
             up_bars += ["skip1", "skip2"]
@@ -468,8 +453,6 @@ class Score:
         
     def create_score(self, file_output_path):
         notation_string = self.get_notation_string()
-
-        input(notation_string)
         
         # Write notation to text file (for editing)
         text_file = open(file_output_path + ".txt", "w")

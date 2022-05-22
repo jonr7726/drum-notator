@@ -5,9 +5,11 @@
 # Testing inputs and outputs
 dat/notation_output/*
 dat/testing/*
+dat/training/*
 
 # Compiled models
 classifier/drum_classifier_model/
+dynamic_bpm/dynamic_bpm_model/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

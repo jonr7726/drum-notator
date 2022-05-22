@@ -10,9 +10,10 @@ def audio_to_peaks(file, visualise=True):
     return utility.get_peaks(tensor, file, MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE, visualise)
       
 # Returns just Mel-spectrograms
-def audio_to_images(file, visualise=True):
+def audio_to_images(file, visualise=True, peaks=[]):
     tensor = utility.get_tensor(file)
-    peaks = utility.get_peaks(tensor, file, MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE, visualise)
+    if peaks == []:
+        peaks = utility.get_peaks(tensor, file, MIN_DISTANCE, MIN_PROMINENCE, SMOOTH_DISTANCE, visualise)
     
     return utility.get_images(tensor, peaks, MIN_DISTANCE)
     

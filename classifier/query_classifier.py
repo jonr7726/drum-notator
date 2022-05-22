@@ -1,10 +1,10 @@
 import tensorflow as tf
 
-from classifier import MODEL_PATH
+from classifier import CLASSIFIER
 from classifier import MIN_CONFIDENCE
 
 # Import model
-model = tf.keras.models.load_model(MODEL_PATH)
+model = tf.keras.models.load_model(CLASSIFIER)
 
 # Gets all instruments classified in each note, given the minimum confidence threshold for a classification to be valid
 # Instruments is returned as a 2D list where each element is a list of integers, representing each index in labels for valid instruements in that peak
@@ -28,16 +28,3 @@ def get_instruments(peak_spectograms):
 		instruments.append(peak_instruments)
 
 	return instruments
-
-# Gets durations of peaks (as fraction of beat)
-def get_durations(spb, peaks):
-	durations = []
-
-	# Find durations with distances between peaks
-	for i in range(len(peaks) - 1):
-		durations.append((peaks[i + 1] - peaks[i]) / spb)
-
-	# Fill remaining bar (no next peak to distance off)
-	durations.append(4 - (sum(durations) % 4))
-
-	return durations
