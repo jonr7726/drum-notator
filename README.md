@@ -1,5 +1,6 @@
 # Drum Notator
 Program to create drum notation (as pdf or png), given an audio input (as mp3).
+See docs folder for detailed documenation on the project.
 
 ## Dependencies
 - TensorFlow
@@ -31,7 +32,6 @@ Next, place input files to 'dat/testing/' and run main program
 Outputs will be placed in 'dat/notation_output/' folder, and will contain text and pdf files. Text files can be edited and recompiled with
 ```
 > compile_string.py
-> <desired file, or folder of files>
 ```
 
 ## Known Issues

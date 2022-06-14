@@ -1,15 +1,19 @@
+# Uncompiled documentation files
+docs/*.docx
+docs/*.tmp
+
 # Training data and pickle dump files
 *.p
 *.mp3
 
 # Testing inputs and outputs
-dat/notation_output/*
-dat/testing/*
-dat/training/*
+src/dat/notation_output/*
+src/dat/testing/*
+src/dat/training/*
 
 # Compiled models
-classifier/drum_classifier_model/
-dynamic_bpm/dynamic_bpm_model/
+src/classifier/drum_classifier_model/
+src/dynamic_bpm/dynamic_bpm_model/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
